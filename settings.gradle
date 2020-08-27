@@ -1,2 +1,3 @@
+include ':receiver'
 include ':app'
 rootProject.name = "BCReceiver"
