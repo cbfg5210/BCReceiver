@@ -1,11 +1,160 @@
 package cbfg.bcreceiver
 
-import androidx.appcompat.app.AppCompatActivity
+import android.content.Intent
+import android.net.ConnectivityManager
+import android.net.wifi.WifiManager
 import android.os.Bundle
+import android.util.Log
+import android.view.View
+import androidx.appcompat.app.AppCompatActivity
+import cbfg.bcreceiver.watcher.BatteryWatcher
+import cbfg.bcreceiver.watcher.HomeWatcher
+import cbfg.bcreceiver.watcher.NetworkWatcher
+import cbfg.bcreceiver.watcher.TimeWatcher
+import kotlinx.android.synthetic.main.activity_main.*
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), View.OnClickListener {
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        btnTime.setOnClickListener(this)
+        btnBattery.setOnClickListener(this)
+        btnHome.setOnClickListener(this)
+        btnScreen.setOnClickListener(this)
+        btnNet.setOnClickListener(this)
+        btnPkg.setOnClickListener(this)
+    }
+
+    override fun onClick(v: View) {
+        v.isEnabled = false
+
+        when (v.id) {
+            R.id.btnTime -> {
+                BCReceiver()
+                    .withFilter { intentFilter ->
+                        intentFilter.addAction(Intent.ACTION_TIME_CHANGED)
+                        intentFilter.addAction(Intent.ACTION_TIME_TICK)
+                    }
+                    //.setCallback { context, intent -> Log.e("***", "${System.currentTimeMillis()}") }
+                    .setBCWatcher(TimeWatcher("yyyy-MM-dd HH:mm:ss") { timeMills, formattedTime ->
+                        Log.e("***", "timeMills=$timeMills,formattedTime=$formattedTime")
+                    })
+                    .bind(this, lifecycle)
+            }
+
+            R.id.btnBattery -> {
+                val bcWatcher = BatteryWatcher()
+                    .onChargeEvent { isCharging -> Log.e("***", "isCharging = $isCharging") }
+                    .onAmountEvent { amount -> Log.e("***", "battery amount = $amount") }
+                    .onStateEvent { state ->
+                        Log.e(
+                            "***",
+                            "level=${state.level},scale=${state.scale},amount=${state.amount},voltage=${state.voltage},status=${state.status},plugged=${state.plugged}"
+                        )
+                    }
+                    .onOtherEvent { action -> Log.e("***", "action = $action") }
+
+                BCReceiver()
+                    .withFilter { intentFilter ->
+                        intentFilter.addAction(Intent.ACTION_POWER_CONNECTED)
+                        intentFilter.addAction(Intent.ACTION_POWER_DISCONNECTED)
+                        intentFilter.addAction(Intent.ACTION_BATTERY_CHANGED)
+                        intentFilter.addAction(Intent.ACTION_BATTERY_LOW)
+                        //由低电状态恢复电量
+                        intentFilter.addAction(Intent.ACTION_BATTERY_OKAY)
+                    }
+                    //.setCallback { context, intent -> Log.e("***", "action = ${intent.action}") }
+                    .setBCWatcher(bcWatcher)
+                    .bind(this, lifecycle)
+            }
+
+            R.id.btnHome -> {
+                BCReceiver()
+                    .withFilter { intentFilter ->
+                        intentFilter.addAction(Intent.ACTION_CLOSE_SYSTEM_DIALOGS)
+                    }
+                    //.setCallback { context, intent -> Log.e("***", "action = ${intent.action}") }
+                    .setBCWatcher(HomeWatcher { reason ->
+                        when (reason) {
+                            HomeWatcher.FLAG_HOME -> Log.e("***", "Home")
+                            HomeWatcher.FLAG_LOCK -> Log.e("***", "Lock")
+                            HomeWatcher.FLAG_RECENT_APPS -> Log.e("***", "Recent apps")
+                            HomeWatcher.FLAG_ASSIST -> Log.e("***", "Assist")
+                            else -> Log.e("***", "Other")
+                        }
+                    })
+                    .bind(this, lifecycle)
+            }
+
+            R.id.btnScreen -> {
+                BCReceiver()
+                    .withFilter { intentFilter ->
+                        intentFilter.addAction(Intent.ACTION_SCREEN_ON)
+                        //息屏(锁屏)
+                        intentFilter.addAction(Intent.ACTION_SCREEN_OFF)
+                        //屏幕解锁
+                        intentFilter.addAction(Intent.ACTION_USER_PRESENT)
+                    }
+                    .setCallback { _, intent -> Log.e("***", "action = ${intent.action}") }
+                    .bind(this, lifecycle)
+            }
+
+            R.id.btnNet -> {
+                val bcWatcher = NetworkWatcher()
+                    .onNetConnEvent { isConnected, isAvailable, netType ->
+                        Log.e(
+                            "***",
+                            "isConnected = $isConnected,isAvailable = $isAvailable,netType = $netType"
+                        )
+                    }
+                    .onWifiStateEvent { isWifiEnabled ->
+                        Log.e("***", "isWifiEnabled = $isWifiEnabled")
+                    }
+                    .onWifiConnStateEvent { connState ->
+                        Log.e("***", "connState = $connState")
+                    }
+                    .onWifiRSSIEvent(5) { signalLevel ->
+                        Log.e("***", "signalLevel = $signalLevel")
+                    }
+                    .onWifiConnResultEvent { result ->
+                        Log.e("***", "conn result = $result")
+                    }
+                    .onWifiScanResultEvent { list ->
+                        Log.e("***", "scan result = $list")
+                    }
+
+                BCReceiver()
+                    .withFilter { intentFilter ->
+                        //监听网络连接,包括 wifi 和移动数据的打开和关闭,以及连接上可用的连接都会接到监听
+                        intentFilter.addAction(ConnectivityManager.CONNECTIVITY_ACTION)
+                        //用于判断是否连接到了有效 wifi (不能用于判断是否能够连接互联网)
+                        intentFilter.addAction(WifiManager.NETWORK_STATE_CHANGED_ACTION)
+                        //wifi 打开或关闭的状态
+                        intentFilter.addAction(WifiManager.WIFI_STATE_CHANGED_ACTION)
+                        intentFilter.addAction(WifiManager.RSSI_CHANGED_ACTION)
+                        intentFilter.addAction(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION)
+                        intentFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)
+                    }
+                    //.setCallback { _, intent -> Log.e("***", "intent = $intent") }
+                    .setBCWatcher(bcWatcher)
+                    .bind(this, lifecycle)
+            }
+
+            R.id.btnPkg -> {
+                BCReceiver()
+                    .withFilter { intentFilter ->
+                        intentFilter.addAction(Intent.ACTION_PACKAGE_ADDED)
+                        intentFilter.addAction(Intent.ACTION_PACKAGE_REMOVED)
+                        intentFilter.addAction(Intent.ACTION_PACKAGE_REPLACED)
+                        intentFilter.addDataScheme("package")
+                    }
+                    .setCallback { _, intent ->
+                        Log.e("***", "intent = $intent,dataString = ${intent.dataString}")
+                    }
+                    .bind(this, lifecycle)
+            }
+        }
     }
 }
