@@ -98,6 +98,6 @@ class TimeWatcher(
 ```
 
 为了便利使用以及减少重复代码，依赖库中对时间广播、home 键广播、电量广播、网络广播自定义了回调处理:
-![capture_1.png](https://raw.githubusercontent.com/cbfg5210/BroadcastReceiver/master/captures/capture_1.png)
+![capture_1.png](https://gitee.com/cbfg5210/BCReceiver/raw/master/captures/capture_1.png)
 
 具体使用可以看[这里](https://gitee.com/cbfg5210/BCReceiver/blob/master/app/src/main/java/cbfg/bcreceiver/MainActivity.kt)
