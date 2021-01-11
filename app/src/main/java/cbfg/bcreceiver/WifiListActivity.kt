@@ -10,6 +10,7 @@ import android.provider.Settings
 import android.util.Log
 import android.view.View
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import kotlinx.android.synthetic.main.activity_wifi_list.*
 import pub.devrel.easypermissions.EasyPermissions
@@ -22,7 +23,7 @@ class WifiListActivity : AppCompatActivity(R.layout.activity_wifi_list),
     companion object {
         private const val TAG = "WifiListActivity"
         private val PERMISSIONS = arrayOf(
-            //android.Manifest.permission.ACCESS_WIFI_STATE,
+            android.Manifest.permission.ACCESS_WIFI_STATE,
             android.Manifest.permission.ACCESS_COARSE_LOCATION,
             android.Manifest.permission.ACCESS_FINE_LOCATION
         )
@@ -70,14 +71,22 @@ class WifiListActivity : AppCompatActivity(R.layout.activity_wifi_list),
             EasyPermissions.requestPermissions(
                 this,
                 "获取 wifi 列表需要使用位置权限",
-                111,
+                1112,
                 *PERMISSIONS
             )
             return false
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
             if (!isLocationEnabled) {
-                openGpsSettings()
+                AlertDialog.Builder(this)
+                    .setMessage("获取周边 wifi 信息需要开启定位服务")
+                    .setNegativeButton("取消") { dialog, _ -> dialog.dismiss() }
+                    .setPositiveButton("去开启") { dialog, _ ->
+                        dialog.dismiss()
+                        openGpsSettings()
+                    }
+                    .create()
+                    .show()
                 return false
             }
         }
@@ -114,6 +123,6 @@ class WifiListActivity : AppCompatActivity(R.layout.activity_wifi_list),
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this)
     }
 }
