@@ -1,5 +1,1 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="cbfg.bcreceiver">
-
-    /
-</manifest>
+<manifest package="cbfg.bcreceiver" />
