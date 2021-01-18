@@ -7,10 +7,6 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
-import cbfg.bcreceiver.watcher.BatteryWatcher
-import cbfg.bcreceiver.watcher.HomeWatcher
-import cbfg.bcreceiver.watcher.NetworkWatcher
-import cbfg.bcreceiver.watcher.TimeWatcher
 import kotlinx.android.synthetic.main.activity_main.*
 
 class MainActivity : AppCompatActivity(), View.OnClickListener {
@@ -37,25 +33,11 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                         intentFilter.addAction(Intent.ACTION_TIME_CHANGED)
                         intentFilter.addAction(Intent.ACTION_TIME_TICK)
                     }
-                    //.setCallback { context, intent -> Log.e("***", "${System.currentTimeMillis()}") }
-                    .setBCWatcher(TimeWatcher("yyyy-MM-dd HH:mm:ss") { timeMills, formattedTime ->
-                        Log.e("***", "timeMills=$timeMills,formattedTime=$formattedTime")
-                    })
+                    .setCallback { _, _ -> Log.e("***", "${System.currentTimeMillis()}") }
                     .bind(this, lifecycle)
             }
 
             R.id.btnBattery -> {
-                val bcWatcher = BatteryWatcher()
-                    .onChargeEvent { isCharging -> Log.e("***", "isCharging = $isCharging") }
-                    .onAmountEvent { amount -> Log.e("***", "battery amount = $amount") }
-                    .onStateEvent { state ->
-                        Log.e(
-                            "***",
-                            "level=${state.level},scale=${state.scale},amount=${state.amount},voltage=${state.voltage},status=${state.status},plugged=${state.plugged}"
-                        )
-                    }
-                    .onOtherEvent { action -> Log.e("***", "action = $action") }
-
                 BCReceiver()
                     .withFilter { intentFilter ->
                         intentFilter.addAction(Intent.ACTION_POWER_CONNECTED)
@@ -65,8 +47,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                         //由低电状态恢复电量
                         intentFilter.addAction(Intent.ACTION_BATTERY_OKAY)
                     }
-                    //.setCallback { context, intent -> Log.e("***", "action = ${intent.action}") }
-                    .setBCWatcher(bcWatcher)
+                    .setCallback { context, intent -> Log.e("***", "action = ${intent.action}") }
                     .bind(this, lifecycle)
             }
 
@@ -75,16 +56,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                     .withFilter { intentFilter ->
                         intentFilter.addAction(Intent.ACTION_CLOSE_SYSTEM_DIALOGS)
                     }
-                    //.setCallback { context, intent -> Log.e("***", "action = ${intent.action}") }
-                    .setBCWatcher(HomeWatcher { reason ->
-                        when (reason) {
-                            HomeWatcher.FLAG_HOME -> Log.e("***", "Home")
-                            HomeWatcher.FLAG_LOCK -> Log.e("***", "Lock")
-                            HomeWatcher.FLAG_RECENT_APPS -> Log.e("***", "Recent apps")
-                            HomeWatcher.FLAG_ASSIST -> Log.e("***", "Assist")
-                            else -> Log.e("***", "Other")
-                        }
-                    })
+                    .setCallback { _, intent -> Log.e("***", "action = ${intent.action}") }
                     .bind(this, lifecycle)
             }
 
@@ -102,29 +74,6 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
             }
 
             R.id.btnNet -> {
-                val bcWatcher = NetworkWatcher()
-                    .onNetConnEvent { isConnected, isAvailable, netType ->
-                        Log.e(
-                            "***",
-                            "isConnected = $isConnected,isAvailable = $isAvailable,netType = $netType"
-                        )
-                    }
-                    .onWifiStateEvent { isWifiEnabled ->
-                        Log.e("***", "isWifiEnabled = $isWifiEnabled")
-                    }
-                    .onWifiConnStateEvent { connState ->
-                        Log.e("***", "connState = $connState")
-                    }
-                    .onWifiRSSIEvent(5) { signalLevel ->
-                        Log.e("***", "signalLevel = $signalLevel")
-                    }
-                    .onWifiConnResultEvent { result ->
-                        Log.e("***", "conn result = $result")
-                    }
-                    .onWifiScanResultEvent { list ->
-                        Log.e("***", "scan result = $list")
-                    }
-
                 BCReceiver()
                     .withFilter { intentFilter ->
                         //监听网络连接,包括 wifi 和移动数据的打开和关闭,以及连接上可用的连接都会接到监听
@@ -137,8 +86,7 @@ class MainActivity : AppCompatActivity(), View.OnClickListener {
                         intentFilter.addAction(WifiManager.SUPPLICANT_STATE_CHANGED_ACTION)
                         intentFilter.addAction(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)
                     }
-                    //.setCallback { _, intent -> Log.e("***", "intent = $intent") }
-                    .setBCWatcher(bcWatcher)
+                    .setCallback { _, intent -> Log.e("***", "intent = $intent") }
                     .bind(this, lifecycle)
             }
 
