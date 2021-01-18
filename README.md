@@ -1,7 +1,6 @@
 # BCReceiver
 [![](https://jitpack.io/v/com.gitee.cbfg5210/BCReceiver.svg)](https://jitpack.io/#com.gitee.cbfg5210/BCReceiver)
 
-
 为了简化广播接收处理，封装了一下广播接收器，使用方法：
 
 ## 引入依赖
@@ -97,7 +96,9 @@ class TimeWatcher(
           .bind(this, lifecycle)
 ```
 
-为了便利使用以及减少重复代码，依赖库中对时间广播、home 键广播、电量广播、网络广播自定义了回调处理:
-![capture_1.png](https://gitee.com/cbfg5210/BCReceiver/raw/master/captures/capture_1.png)
+~~为了便利使用以及减少重复代码，依赖库中对时间广播、home 键广播、电量广播、网络广播自定义了回调处理:~~
+(:warning: 为了保持 BCReceiver 的轻量化，自 v0.2 起原内部封装的 watcher 已迁移到 [BCReceiver-Watchers](https://gitee.com/cbfg5210/BCReceiver-Watchers) 中)  
+![capture_1.png](https://gitee.com/cbfg5210/BCReceiver/raw/master/captures/capture_1.png)  
+
 
 具体使用可以看[这里](https://gitee.com/cbfg5210/BCReceiver/blob/master/app/src/main/java/cbfg/bcreceiver/MainActivity.kt)
